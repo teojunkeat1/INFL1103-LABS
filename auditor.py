@@ -1,7 +1,7 @@
 inventory = 0
 loop = "continue"
 rejectedentries = 0
-while loop != "quit":
+while loop != "quit" or inventory > 500:
     #loop code
     stockvalue = input("What is the current stock value: ")
     #integer as input
@@ -15,6 +15,8 @@ while loop != "quit":
         inventory += stockvalue 
     print("Your current inventory is:" + inventory)
     loop = ("Continue? Type "continue" or "quit": ")
+if inventory > 500:
+    print("Current inventory is above 500.")
 
     
 
