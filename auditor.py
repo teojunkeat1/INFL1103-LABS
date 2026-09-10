@@ -17,7 +17,10 @@ while loop != "quit" or inventory > 500:
     loop = ("Continue? Type "continue" or "quit": ")
 if inventory > 500:
     print("Current inventory is above 500.")
-
+elif loop == "quit":
+    print("Total Units processed: " + inventory)
+    print ("Total rejected units" + rejectedentries)
+    
     
 
 
