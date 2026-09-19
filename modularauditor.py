@@ -21,13 +21,21 @@ while True:
 
 #Modular input: get valid input
 def get_valid_input():
+    userInput = input("What is the current stock value: ")
     if userInput == "quit":
         return "quit"
     elif userInput.isdigit() == False:
         print("Error, please input a positive whole number.")
     else:
         return userInput    
-        
+
+#Process delivery
+def process_delivery(current_total, new_value):
+    new_total = current_total + new_value
+    return new_total
+
+
+
 
 
     
