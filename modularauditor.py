@@ -1,26 +1,5 @@
-inventory = 0
-rejectedentries = 0
-while True:
-    #loop code
-    stockvalue = input("What is the current stock value: ")
-    if stockvalue == "quit":
-        print("Total processed units: " + str(inventory))
-        print("Total rejected units: " + str(rejectedentries))
-        break 
-    #integer as input
-    elif stockvalue.isdigit() == False:
-        print("Error, please input a positive whole number.")
-        rejectedentries += 1
-    else:
-        inventory += int(stockvalue)
-    print("Your current inventory is:" + str(inventory))
-    if inventory > 500:
-        print("Current inventory is above 500.")
-        break 
-
 maxcapacity = 500
 taxrate = 0.1 
-failed_attempts = 0
 
 #Modular input: get valid input
 def get_valid_input():
@@ -29,9 +8,9 @@ def get_valid_input():
         return "quit"
     elif userInput.isdigit() == False:
         print("Error, please input a positive whole number.")
-        failed_attempts += 1
+        return None 
     else:
-        return userInput    
+        return int(userInput)    
 
 #Process delivery
 def process_delivery(current_total, new_value):
@@ -46,9 +25,35 @@ def calculate_tax(amount):
 #Generate report
 def generate_report(total_units, failed_attempts):
     print("The total units delivered is: " + str(total_units))
-    print("The total failed entries is: " + str(failed_attempts)))
+    print("The total failed entries is: " + str(failed_attempts))
 
+def main():
+    inventory = 0
+    tax_amount = 0
+    failed_attempts = 0 
+    exit_program = False
 
+    while not exit_program:
+
+        userInput = get_valid_input()
+
+        if userInput == "quit":
+            generate_report(inventory, failed_attempts)
+            exit_program = True 
+
+        elif userInput == None:
+            failed_attempts += 1
+
+        elif inventory > maxcapacity:
+            print("Error, delivery would exceed max capacity.")
+            generate_report(inventory, failed_attempts)
+
+        else:
+            inventory = process_delivery(inventory, userInput)
+            tax_amount = calculate_tax(userInput)
+
+            print("Delivery successful, tax is:" + str(tax_amount))
+main()
 
 
 
