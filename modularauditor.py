@@ -18,6 +18,8 @@ while True:
         print("Current inventory is above 500.")
         break 
 
+maxcapacity = 500
+taxrate = 0.1 
 
 #Modular input: get valid input
 def get_valid_input():
@@ -33,6 +35,11 @@ def get_valid_input():
 def process_delivery(current_total, new_value):
     new_total = current_total + new_value
     return new_total
+
+#Calculate tax
+def calculate_tax(amount):
+    tax = amount * taxrate
+    return tax 
 
 
 
