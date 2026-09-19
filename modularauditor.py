@@ -20,6 +20,7 @@ while True:
 
 maxcapacity = 500
 taxrate = 0.1 
+failed_attempts = 0
 
 #Modular input: get valid input
 def get_valid_input():
@@ -28,6 +29,7 @@ def get_valid_input():
         return "quit"
     elif userInput.isdigit() == False:
         print("Error, please input a positive whole number.")
+        failed_attempts += 1
     else:
         return userInput    
 
@@ -40,6 +42,11 @@ def process_delivery(current_total, new_value):
 def calculate_tax(amount):
     tax = amount * taxrate
     return tax 
+
+#Generate report
+def generate_report(total_units, failed_attempts):
+    print("The total units delivered is: " + str(total_units))
+    print("The total failed entries is: " + str(failed_attempts)))
 
 
 
