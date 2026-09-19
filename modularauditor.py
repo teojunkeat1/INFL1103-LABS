@@ -9,6 +9,10 @@ def get_valid_input():
     elif userInput.isdigit() == False:
         print("Error, please input a positive whole number.")
         return None 
+
+    elif int(userInput) >= maxcapacity:
+        print("Error, please input a valid number: ")
+        return None
     else:
         return int(userInput)    
 
