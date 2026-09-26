@@ -14,6 +14,12 @@ def load_inventory():
 def store_valid_transaction(inventory_list, inventory):
     inventory_list.append(inventory)
 
+def save_inventory(inventory,inventory_list):
+    file = open('inventory.txt', 'w+')
+    file.write(str(inventory))
+    file.write("\n")
+    file.writelines(str(inventory_list))
+    file.close()
 
 
 #Opening previous inventory
@@ -53,7 +59,7 @@ def main():
     inventory = 0
     tax_amount = 0
     failed_attempts = 0 
-    inventorylist = [] 
+    inventory_list = [] 
     exit_program = False
 
     load_inventory()
@@ -64,6 +70,7 @@ def main():
 
         if userInput == "quit":
             generate_report(inventory, failed_attempts)
+            save_inventory(inventory, inventory_list)
             exit_program = True 
 
         elif userInput == None:
@@ -72,13 +79,15 @@ def main():
         elif inventory > maxcapacity:
             print("Error, delivery would exceed max capacity.")
             generate_report(inventory, failed_attempts)
+            save_inventory(inventory, inventory_list)
+            exit_program = True
 
         else:
             inventory = process_delivery(inventory, userInput)
             tax_amount = calculate_tax(userInput)
-            store_valid_transaction(inventorylist, userInput)
+            store_valid_transaction(inventory_list, userInput)
             print("Delivery successful, tax is:" + str(tax_amount))
-            print(inventorylist)
+            print(inventory_list)
 main()
 
 
