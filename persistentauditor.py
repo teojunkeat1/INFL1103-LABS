@@ -1,6 +1,13 @@
 maxcapacity = 500
 taxrate = 0.1 
 
+file = open('inventory.txt', 'r')
+inventory = file.read()
+print(inventory)
+file.close()
+
+#Opening previous inventory
+
 #Modular input: get valid input
 def get_valid_input():
     userInput = input("What is the current stock value: ")
