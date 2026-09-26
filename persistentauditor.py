@@ -1,18 +1,20 @@
 maxcapacity = 500
 taxrate = 0.1 
 
-
-def load_inventory():
+def load_inventory(inventory,inventory_list):
     try: 
         file = open('inventory.txt', 'r')
     except:
         file = open('inventory.txt', 'w+')
-    inventory = file.read()
-    print(inventory)
+    line1 = file.readline()
+    line2 = file.readline()
+    inventory = int(line1)
+    inventory_list = [int(x) for x in line2.strip('[]').split(',')]
     file.close()
+    return inventory, inventory_list
 
-def store_valid_transaction(inventory_list, inventory):
-    inventory_list.append(inventory)
+def store_valid_transaction(inventory_list, item):
+    inventory_list.append(item)
 
 def save_inventory(inventory,inventory_list):
     file = open('inventory.txt', 'w+')
@@ -62,7 +64,11 @@ def main():
     inventory_list = [] 
     exit_program = False
 
-    load_inventory()
+    inventory, inventory_list = load_inventory(inventory, inventory_list)
+    print(type(inventory_list))
+    print(inventory)
+    print(inventory_list)
+
 
     while not exit_program:
 
