@@ -1,10 +1,20 @@
 maxcapacity = 500
 taxrate = 0.1 
 
-file = open('inventory.txt', 'r')
-inventory = file.read()
-print(inventory)
-file.close()
+
+def load_inventory():
+    try: 
+        file = open('inventory.txt', 'r')
+    except:
+        file = open('inventory.txt', 'w+')
+    inventory = file.read()
+    print(inventory)
+    file.close()
+
+def store_valid_transaction(inventory_list, inventory):
+    inventory_list.append(inventory)
+
+
 
 #Opening previous inventory
 
@@ -39,10 +49,14 @@ def generate_report(total_units, failed_attempts):
     print("The total failed entries is: " + str(failed_attempts))
 
 def main():
+
     inventory = 0
     tax_amount = 0
     failed_attempts = 0 
+    inventorylist = [] 
     exit_program = False
+
+    load_inventory()
 
     while not exit_program:
 
@@ -62,8 +76,9 @@ def main():
         else:
             inventory = process_delivery(inventory, userInput)
             tax_amount = calculate_tax(userInput)
-
+            store_valid_transaction(inventorylist, userInput)
             print("Delivery successful, tax is:" + str(tax_amount))
+            print(inventorylist)
 main()
 
 
