@@ -47,13 +47,10 @@ def load_inventory():
         print("inventory.json found.")
         print("Inventory loaded successfully.")
         return inventory
-    except FileNotFoundError:
-        print("inventory.json not found. Starting with an empty inventory.")
+    except:
+        print("Inventory.json is missing or corrupted. Starting with new file.")
         return []
-    except json.JSONDecodeError:
-        print("inventory.json is corrupted. Starting with an empty inventory.")
-        return []
- 
+ #LOAD INVENTORY TESTING
  
 def save_inventory(inventory):
     """Overwrite inventory.json with the current inventory."""
@@ -102,8 +99,8 @@ def update_stock(inventory):
         print("Product not found.")
         return
     print("Product Found:")
-    print(f"Name: {product['name']}")
-    print(f"Current Stock: {product['stock']}")
+    print("Name: {product['name']}")
+    print("Current Stock: {product['stock']}")
     product["stock"] = read_stock("New Stock Quantity: ")
     print("Stock updated successfully!")
  
@@ -116,10 +113,10 @@ def search_product(inventory):
         return
     print("Product Found")
     print(LINE)
-    print(f"ID: {product['id']}")
-    print(f"Name: {product['name']}")
-    print(f"Price: ${product['price']:.2f}")
-    print(f"Stock: {product['stock']}")
+    print("ID: {product['id']}")
+    print("Name: {product['name']}")
+    print("Price: ${product['price']:.2f}")
+    print("Stock: {product['stock']}")
     print(LINE)
  
  
