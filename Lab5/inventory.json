@@ -1,0 +1,20 @@
+[
+    {
+        "id": "1001",
+        "name": "Candle",
+        "price": 7.0,
+        "stock": 9
+    },
+    {
+        "id": "1002",
+        "name": "Phone Stand",
+        "price": 15.0,
+        "stock": 20
+    },
+    {
+        "id": "6001",
+        "name": "Ball",
+        "price": 2.0,
+        "stock": 60
+    }
+]
