@@ -52,8 +52,8 @@ def load_inventory():
         return []
  #LOAD INVENTORY TESTING
  
+ #INVENTORY SAVE
 def save_inventory(inventory):
-    """Overwrite inventory.json with the current inventory."""
     with open(INVENTORY_FILE, "w") as file:
         json.dump(inventory, file, indent=4)
  
