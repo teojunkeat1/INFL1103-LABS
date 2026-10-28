@@ -1,7 +1,6 @@
 
 import json
  
-INVENTORY_FILE = "inventory.json"
 LINE = "-" * 48
  
  
@@ -40,9 +39,8 @@ def read_stock(prompt):
 # ---------- Data persistence ----------
  
 def load_inventory():
-    """Load inventory.json if it exists, otherwise start with an empty list."""
     try:
-        with open(INVENTORY_FILE, "r") as file:
+        with open("inventory.json", "r") as file:
             inventory = json.load(file)
         print("inventory.json found.")
         print("Inventory loaded successfully.")
@@ -54,7 +52,7 @@ def load_inventory():
  
  #INVENTORY SAVE
 def save_inventory(inventory):
-    with open(INVENTORY_FILE, "w") as file:
+    with open("inventory.json", "w") as file:
         json.dump(inventory, file, indent=4)
  
 
