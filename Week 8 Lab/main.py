@@ -1,19 +1,21 @@
-from product import Product
+from physical_product import PhysicalProduct
+from digital_product import DigitalProduct
+from canbeshipped import CanBeShipped
 from file_handler import load_inventory, save_inventory, INVENTORY_FILE
- 
+
 LINE = "-" * 48
- 
- 
+
+
 # ---------- Input helpers (main program is responsible for user input) ----------
- 
+
 def read_non_empty(prompt):
     while True:
         value = input(prompt).strip()
         if value:
             return value
         print("Input cannot be empty.")
- 
- 
+
+
 def read_price(prompt):
     while True:
         try:
@@ -23,8 +25,20 @@ def read_price(prompt):
             print("Price cannot be negative.")
         except ValueError:
             print("Please enter a valid number.")
- 
- 
+
+
+def read_positive_number(prompt):
+    """Keep asking until the user types a number greater than 0 (weight, download size)."""
+    while True:
+        try:
+            value = float(input(prompt))
+            if value > 0:
+                return value
+            print("Value must be greater than 0.")
+        except ValueError:
+            print("Please enter a valid number.")
+
+
 def read_stock(prompt):
     """Keep asking until the user types a non-negative whole number."""
     while True:
@@ -35,12 +49,27 @@ def read_stock(prompt):
             print("Stock cannot be negative.")
         except ValueError:
             print("Please enter a whole number.")
- 
- 
+
+
+def read_product_type():
+    """Ask whether the new product is physical or digital."""
+    print("Product Type:")
+    print("1. Physical Product (shipped, has a weight)")
+    print("2. Digital Product (downloaded, has a download size)")
+    while True:
+        choice = input("Choose type (1-2): ").strip()
+        if choice == "1":
+            return "physical"
+        if choice == "2":
+            return "digital"
+        print("Please enter 1 or 2.")
+
+
 # ---------- Menu actions (call Inventory / Product methods) ----------
- 
+
 def add_product(inventory):
     print("Add New Product")
+    product_type = read_product_type()
     product_id = read_non_empty("Product ID: ")
     if inventory.search_product(product_id) is not None:
         print("A product with this ID already exists.")
@@ -48,12 +77,19 @@ def add_product(inventory):
     name = read_non_empty("Product Name: ")
     price = read_price("Price: ")
     stock = read_stock("Stock Quantity: ")
- 
-    product = Product(product_id, name, price, stock)
+
+    # Ask for the extra detail that belongs to the chosen product type
+    if product_type == "physical":
+        weight = read_positive_number("Weight (kg): ")
+        product = PhysicalProduct(product_id, name, price, stock, weight)
+    else:
+        download_size = read_positive_number("Download Size (MB): ")
+        product = DigitalProduct(product_id, name, price, stock, download_size)
+
     inventory.add_product(product)
     print("Product added successfully!")
- 
- 
+
+
 def update_stock(inventory):
     print("Update Stock")
     product = inventory.search_product(read_non_empty("Enter Product ID: "))
@@ -65,8 +101,8 @@ def update_stock(inventory):
     print(f"Current Stock: {product.get_stock()}")
     product.update_stock(read_stock("New Stock Quantity: "))
     print("Stock updated successfully!")
- 
- 
+
+
 def search_product(inventory):
     print("Search Product")
     product = inventory.search_product(read_non_empty("Enter Product ID: "))
@@ -76,9 +112,13 @@ def search_product(inventory):
     print("Product Found")
     print(LINE)
     product.display_information()
+    print(f"Fulfilment: {product.get_fulfilment_info()}")
+    # Only products that implement the CanBeShipped interface have a shipping cost
+    if isinstance(product, CanBeShipped):
+        print(f"Shipping Cost: ${product.calculate_shipping_cost():.2f}")
     print(LINE)
- 
- 
+
+
 def print_menu():
     print("----------- MENU -----------")
     print("1. Display All Products")
@@ -88,8 +128,8 @@ def print_menu():
     print("5. Save Inventory")
     print("6. Exit")
     print("----------------------------")
- 
- 
+
+
 def run_menu(inventory):
     print_menu()
     while True:
@@ -114,16 +154,15 @@ def run_menu(inventory):
             break
         else:
             print("Invalid option. Please enter a number from 1 to 6.")
- 
- 
+
+
 def main():
     print("=" * 40)
     print("INVENTORY MANAGEMENT SYSTEM")
     print("=" * 40)
     inventory = load_inventory()
     run_menu(inventory)
- 
- 
+
+
 if __name__ == "__main__":
     main()
- 
