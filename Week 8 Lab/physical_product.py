@@ -1,5 +1,5 @@
 from product import Product
-from can_be_shipped import CanBeShipped
+from canbeshipped import CanBeShipped
 
 
 class PhysicalProduct(Product, CanBeShipped):
