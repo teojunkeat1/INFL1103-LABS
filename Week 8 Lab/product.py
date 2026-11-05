@@ -1,5 +1,7 @@
-class Product:
-    """Represents a single product and manages its own state (SRP)."""
+from abc import ABC, abstractmethod
+
+
+class Product(ABC):
 
     def __init__(self, product_id, name, price, stock):
         if price < 0:
@@ -25,7 +27,7 @@ class Product:
     def get_stock(self):
         return self.__stock
 
-    # ---------- Behaviour ----------
+    # ---------- Regular methods: implemented here, reused by every subclass ----------
 
     def update_stock(self, quantity):
         """Set a new stock level. The Product decides what values are allowed."""
@@ -36,5 +38,13 @@ class Product:
         self.__stock = quantity
 
     def display_information(self):
+        """Print the details every product has. Subclasses add their own details using super()."""
         print(f"ID: {self.__product_id} | Name: {self.__name} | "
               f"Price: ${self.__price:.2f} | Stock: {self.__stock}")
+
+    # ---------- Abstract method: no implementation, every subclass MUST provide one ----------
+
+    @abstractmethod
+    def get_fulfilment_info(self):
+        """Return a message explaining how this product is delivered to the customer."""
+        pass
