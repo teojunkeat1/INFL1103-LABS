@@ -7,7 +7,6 @@ class Supplier:
         self.__name: str = name
         self.__contact_email: str = contact_email
 
-    # ---------- Getters (read-only access from outside) ----------
 
     def get_supplier_id(self) -> str:
         return self.__supplier_id
@@ -17,8 +16,6 @@ class Supplier:
 
     def get_contact_email(self) -> str:
         return self.__contact_email
-
-    # ---------- Behaviour ----------
 
     def display_information(self) -> None:
         print(f"Supplier ID: {self.__supplier_id} | Name: {self.__name} | "
