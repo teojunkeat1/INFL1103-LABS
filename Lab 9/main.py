@@ -1,93 +1,24 @@
+import csv
+
 from supplier import Supplier
-from product import Product
-from physical_product import PhysicalProduct
-from digital_product import DigitalProduct
 from can_be_shipped import CanBeShipped
 from inventory import Inventory
 from order import Order
-from file_handler import load_inventory, save_inventory, INVENTORY_FILE
+from product_factory import ProductFactory
+from discount_strategy import (DiscountStrategy, NoDiscount, PercentageDiscount,
+                               BulkDiscount, StudentDiscount)
+from file_handler import load_inventory, save_inventory, load_products, INVENTORY_FILE
+from input_helpers import (read_non_empty, get_positive_float, read_stock, read_quantity,
+                           read_email, read_yes_no, read_product_type)
 
 LINE = "-" * 48
 
-
-# ---------- Input helpers (main program is responsible for user input) ----------
-
-def read_non_empty(prompt: str) -> str:
-    while True:
-        value = input(prompt).strip()
-        if value:
-            return value
-        print("Input cannot be empty.")
-
-
-def read_price(prompt: str) -> float:
-    while True:
-        try:
-            value = float(input(prompt))
-            if value >= 0:
-                return value
-            print("Price cannot be negative.")
-        except ValueError:
-            print("Please enter a valid number.")
-
-
-def read_positive_number(prompt: str) -> float:
-    """Keep asking until the user types a number greater than 0 (weight, download size)."""
-    while True:
-        try:
-            value = float(input(prompt))
-            if value > 0:
-                return value
-            print("Value must be greater than 0.")
-        except ValueError:
-            print("Please enter a valid number.")
-
-
-def read_stock(prompt: str) -> int:
-    """Keep asking until the user types a non-negative whole number."""
-    while True:
-        try:
-            value = int(input(prompt))
-            if value >= 0:
-                return value
-            print("Stock cannot be negative.")
-        except ValueError:
-            print("Please enter a whole number.")
-
-
-def read_quantity(prompt: str) -> int:
-    """Keep asking until the user types a whole number greater than 0."""
-    while True:
-        try:
-            value = int(input(prompt))
-            if value > 0:
-                return value
-            print("Quantity must be greater than 0.")
-        except ValueError:
-            print("Please enter a whole number.")
-
-
-def read_email(prompt: str) -> str:
-    while True:
-        value = read_non_empty(prompt)
-        if "@" in value:
-            return value
-        print("Please enter a valid email address (it must contain @).")
-
-
-def read_product_type() -> str:
-    """Ask whether the new product is physical or digital."""
-    print("Product Type:")
-    print("1. Physical Product (shipped, has a weight)")
-    print("2. Digital Product (downloaded, has a download size)")
-    while True:
-        choice = input("Choose type (1-2): ").strip()
-        if choice == "1":
-            return "physical"
-        if choice == "2":
-            return "digital"
-        print("Please enter 1 or 2.")
-
+DISCOUNT_OPTIONS: dict[str, DiscountStrategy] = {
+    "1": NoDiscount(),
+    "2": PercentageDiscount(10),
+    "3": BulkDiscount(200, 20),
+    "4": StudentDiscount(),
+}
 
 # ---------- Supplier actions ----------
 
@@ -149,18 +80,24 @@ def add_product(inventory: Inventory, suppliers: list[Supplier]) -> None:
         print("A product with this ID already exists.")
         return
     name = read_non_empty("Product Name: ")
-    price = read_price("Price: ")
+    price = get_positive_float("Price: ")
     stock = read_stock("Stock Quantity: ")
     supplier = choose_supplier(suppliers)  # association: pass in an existing Supplier object
 
-    product: Product  # either subclass can be used wherever a Product is expected
+    weight: float | None = None
+    download_size: float | None = None
     if product_type == "physical":
-        weight = read_positive_number("Weight (kg): ")
-        product = PhysicalProduct(product_id, name, price, stock, supplier, weight)
+        weight = get_positive_float("Weight (kg): ")
     else:
-        download_size = read_positive_number("Download Size (MB): ")
-        product = DigitalProduct(product_id, name, price, stock, supplier, download_size)
-
+        download_size = get_positive_float("Download Size (MB): ")
+    try:
+        # Factory pattern: main.py never creates a PhysicalProduct or DigitalProduct itself
+        product = ProductFactory.create(product_type, product_id, name, price, stock,
+                                        supplier, weight=weight, download_size=download_size)
+    except ValueError as error:
+        print(f"Product not added: {error}")
+        return
+    
     inventory.add_product(product)
     print("Product added successfully!")
 
@@ -199,10 +136,25 @@ def search_product(inventory: Inventory) -> None:
     print(f"Fulfilment: {product.get_fulfilment_info()}")
     # Shipping is an optional capability (the CanBeShipped interface), not part of Product
     if isinstance(product, CanBeShipped):
-        print(f"Shipping Cost: ${product.calculate_shipping_cost():.2f}")
+        try:
+            print(f"Shipping Cost: ${product.calculate_shipping_cost():.2f}")
+        except ValueError as error:
+            print(f"Shipping Cost: unavailable - {error}")
     print("Supplied by:")
     product.get_supplier().display_information()  # reached through the association
     print(LINE)
+
+def import_products(inventory: Inventory, suppliers: list[Supplier]) -> None:
+    print("Import Products from CSV")
+    if not suppliers:
+        print("No suppliers yet. Please add a supplier first (option 6).")
+        return
+    path = input("CSV file name (press Enter for products.csv): ").strip() or "products.csv"
+    supplier = choose_supplier(suppliers)  # every imported product gets this supplier
+    try:
+        load_products(path, inventory, supplier)
+    except (UnicodeDecodeError, csv.Error):
+        print("That file could not be read as a CSV file, so nothing more was imported.")
 
 
 # ---------- Order actions ----------
@@ -213,6 +165,16 @@ def find_order(orders: list[Order], order_id: str) -> Order | None:
             return order
     return None
 
+def choose_discount() -> DiscountStrategy:
+    """Show the discount options and return the chosen strategy object."""
+    print("Discounts:")
+    for key, discount in DISCOUNT_OPTIONS.items():
+        print(f"{key}. {discount}")
+    while True:
+        choice = input("Choose discount: ").strip()
+        if choice in DISCOUNT_OPTIONS:
+            return DISCOUNT_OPTIONS[choice]
+        print(f"Please enter a number from 1 to {len(DISCOUNT_OPTIONS)}.")
 
 def create_order(inventory: Inventory, orders: list[Order]) -> None:
     print("Create Order")
@@ -220,7 +182,7 @@ def create_order(inventory: Inventory, orders: list[Order]) -> None:
     if find_order(orders, order_id) is not None:
         print("An order with this ID already exists.")
         return
-    order = Order(order_id)
+    order = Order(order_id, choose_discount()) 
     print("Add products to the order. Leave the Product ID blank when you are done.")
     while True:
         product_id = input("Product ID: ").strip()
@@ -241,6 +203,16 @@ def create_order(inventory: Inventory, orders: list[Order]) -> None:
     print("Order created successfully!")
     order.display_order()
 
+def change_order_discount(orders: list[Order]) -> None:
+    print("Change Order Discount")
+    order = find_order(orders, read_non_empty("Order ID: "))
+    if order is None:
+        print("Order not found.")
+        return
+    print(f"Current discount: {order.get_discount()}")
+    order.set_discount(choose_discount())  # swap the strategy - Order itself doesn't change
+    print("Discount updated.")
+    order.display_order()
 
 def view_orders(orders: list[Order]) -> None:
     if not orders:
@@ -249,6 +221,14 @@ def view_orders(orders: list[Order]) -> None:
     for order in orders:
         order.display_order()
 
+def try_save(inventory: Inventory, suppliers: list[Supplier]) -> bool:
+    """Save, reporting a problem instead of crashing. Returns True if the save worked."""
+    try:
+        save_inventory(inventory, suppliers)
+    except OSError as error:
+        print(f"Could not save to {INVENTORY_FILE}: {error.strerror or error}.")
+        return False
+    return True
 
 def print_menu() -> None:
     print("----------- MENU -----------")
@@ -261,8 +241,10 @@ def print_menu() -> None:
     print("7. Display Suppliers")
     print("8. Create Order")
     print("9. View Orders")
-    print("10. Save Inventory")
-    print("11. Exit")
+    print("10. Change Order Discount")
+    print("11. Import Products from CSV")
+    print("12. Save Inventory")
+    print("13. Exit")
     print("----------------------------")
 
 
@@ -290,17 +272,23 @@ def run_menu(inventory: Inventory, suppliers: list[Supplier]) -> None:
         elif option == "9":
             view_orders(orders)
         elif option == "10":
-            print("Saving inventory...")
-            save_inventory(inventory, suppliers)
-            print(f"Inventory saved successfully to {INVENTORY_FILE}.")
+            change_order_discount(orders)
         elif option == "11":
+            import_products(inventory, suppliers)
+        elif option == "12":
+            print("Saving inventory...")
+            if try_save(inventory, suppliers):
+                print(f"Inventory saved successfully to {INVENTORY_FILE}.")
+        elif option == "13":
             print("Saving inventory before exit...")
-            save_inventory(inventory, suppliers)
-            print("Inventory saved successfully.")
+            if try_save(inventory, suppliers):
+                print("Inventory saved successfully.")
+            elif not read_yes_no("Exit without saving? (y/n): "):
+                continue  # stay in the menu so the user can fix the problem and try again
             print("Program exited.")
             break
         else:
-            print("Invalid option. Please enter a number from 1 to 11.")
+            print("Invalid option. Please enter a number from 1 to 13.")
 
 
 def main() -> None:
@@ -308,7 +296,10 @@ def main() -> None:
     print("INVENTORY MANAGEMENT SYSTEM")
     print("=" * 40)
     inventory, suppliers = load_inventory()
-    run_menu(inventory, suppliers)
+    try:
+        run_menu(inventory, suppliers)
+    except (KeyboardInterrupt, EOFError):
+        print("\nProgram stopped. Changes since your last save were not saved.")
 
 
 if __name__ == "__main__":
