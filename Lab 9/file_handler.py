@@ -1,3 +1,4 @@
+import csv 
 import json
 
 from supplier import Supplier
@@ -5,6 +6,7 @@ from product import Product
 from physical_product import PhysicalProduct
 from digital_product import DigitalProduct
 from inventory import Inventory
+from product_factory import ProductFactory 
 
 INVENTORY_FILE = "inventory.json"
 
@@ -23,7 +25,7 @@ def dict_to_supplier(item: dict[str, str]) -> Supplier:
     return Supplier(str(item["id"]), str(item["name"]), str(item["contact_email"]))
 
 
-def product_to_dict(product: Product) -> dict[str, str | float | int]:
+def product_to_dict(product: Product) -> dict[str, str | float | int | None]:
     """Convert a Product into a dictionary. The supplier is saved by its ID, not copied."""
     if isinstance(product, PhysicalProduct):
         product_type, extra_key, extra_value = "physical", "weight", product.get_weight()
@@ -42,6 +44,9 @@ def product_to_dict(product: Product) -> dict[str, str | float | int]:
         extra_key: extra_value,
     }
 
+def optional_float(value: str | float | int | None) -> float | None:
+    """Turn a saved number into a float, keeping None ("not recorded") as None."""
+    return None if value is None else float(value)
 
 def dict_to_product(item: dict[str, str | float | int],
                     suppliers_by_id: dict[str, Supplier]) -> Product:
@@ -49,15 +54,13 @@ def dict_to_product(item: dict[str, str | float | int],
     supplier = suppliers_by_id.get(str(item.get("supplier_id", "")).upper())
     if supplier is None:
         raise ValueError(f"Unknown supplier: {item.get('supplier_id')}")
+    return ProductFactory.create(
+        str(item.get("type", "")), str(item["id"]), str(item["name"]),
+        float(item["price"]), int(item["stock"]), supplier,
+        weight=optional_float(item.get("weight")),
+        download_size=optional_float(item.get("download_size")),
+    )
 
-    product_type = item.get("type")
-    if product_type == "physical":
-        return PhysicalProduct(str(item["id"]), str(item["name"]), float(item["price"]),
-                               int(item["stock"]), supplier, float(item["weight"]))
-    if product_type == "digital":
-        return DigitalProduct(str(item["id"]), str(item["name"]), float(item["price"]),
-                              int(item["stock"]), supplier, float(item["download_size"]))
-    raise ValueError(f"Unknown or missing product type: {product_type}")
 
 
 def load_inventory(filename: str = INVENTORY_FILE) -> tuple[Inventory, list[Supplier]]:
@@ -65,13 +68,16 @@ def load_inventory(filename: str = INVENTORY_FILE) -> tuple[Inventory, list[Supp
     inventory = Inventory()
     suppliers: list[Supplier] = []
     try:
-        with open(filename, "r") as file:
+        with open(filename, "r", encoding="utf-8") as file:
             data = json.load(file)
     except FileNotFoundError:
         print(f"{filename} is missing. Starting with an empty inventory.")
         return inventory, suppliers
-    except json.JSONDecodeError:
+    except (json.JSONDecodeError, UnicodeDecodeError):
         print(f"{filename} is corrupted. Starting with an empty inventory.")
+        return inventory, suppliers
+    except OSError as error:
+        print(f"Could not read {filename} ({error.strerror}). Starting with an empty inventory.")
         return inventory, suppliers
 
     if isinstance(data, list):
@@ -128,5 +134,5 @@ def save_inventory(inventory: Inventory, suppliers: list[Supplier],
         "suppliers": [supplier_to_dict(supplier) for supplier in suppliers],
         "products": [product_to_dict(product) for product in inventory.get_products()],
     }
-    with open(filename, "w") as file:
+    with open(filename, "w", encoding = "utf-8") as file:
         json.dump(data, file, indent=4)
