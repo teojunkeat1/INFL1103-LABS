@@ -4,28 +4,24 @@ from can_be_shipped import CanBeShipped
 
 
 class PhysicalProduct(Product, CanBeShipped):
-    """A product that physically exists, so it has a weight and can be shipped.
-
-    Inheritance (is-a):         a PhysicalProduct is-a Product (its one parent class).
-    Interface (can-be-shipped): it implements the CanBeShipped interface.
-    CanBeShipped is a contract, not a second parent class, so this is still
-    single class inheritance plus one interface.
-    """
 
     def __init__(self, product_id: str, name: str, price: float, stock: int,
-                 supplier: Supplier, weight: float) -> None:
-        super().__init__(product_id, name, price, stock, supplier)  # Product stores the supplier
-        if weight <= 0:
-            raise ValueError("Weight must be greater than 0.")
-        self.__weight: float = float(weight)  # weight in kilograms
+                 supplier: Supplier, weight: float | None = None) -> None:
+        super().__init__(product_id, name, price, stock, supplier)  # Product validates and stores these
+        if weight is not None and weight <= 0:
+            raise ValueError("Weight must be greater than zero.")
+        self.__weight: float | None = None if weight is None else float(weight)  # kilograms
 
-    def get_weight(self) -> float:
+
+    def get_weight(self) -> float | None:
         return self.__weight
 
     # Overrides Product.display_information()
     def display_information(self) -> None:
         super().display_information()  # parent prints the common product details
-        print(f"    Type: Physical | Weight: {self.__weight:.2f} kg")
+        weight_text = "not recorded" if self.__weight is None else f"{self.__weight:.2f} kg"
+        print(f"    Type: Physical | Weight: {weight_text}")
+
 
     # Implements the abstract method from Product
     def get_fulfilment_info(self) -> str:
@@ -34,6 +30,8 @@ class PhysicalProduct(Product, CanBeShipped):
     # Implements the CanBeShipped interface
     def calculate_shipping_cost(self) -> float:
         """Shipping rule: $5.00 flat fee plus $2.00 for every kg."""
+        if self.__weight is None:
+            raise ValueError("weight not recorded, so the shipping cost can't be calculated.")
         base_fee = 5.00
         rate_per_kg = 2.00
         return round(base_fee + self.__weight * rate_per_kg, 2)
