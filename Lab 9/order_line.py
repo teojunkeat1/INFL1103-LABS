@@ -2,19 +2,16 @@ from product import Product
 
 
 class OrderLine:
-    """One product and the quantity requested, as part of an Order.
 
-    Composition: an OrderLine is created and owned by one Order. It is not
-    meant to exist on its own or be moved to another Order.
-    Association: it only REFERS to its Product - it does not own the Product,
-    which can also be in an Inventory or in other orders.
-    """
 
     def __init__(self, product: Product, quantity: int) -> None:
         if not isinstance(product, Product):
             raise TypeError("product must be a Product object.")
-        if not isinstance(quantity, int) or quantity <= 0:
-            raise ValueError("Quantity must be a whole number greater than 0.")
+        if not isinstance(quantity, int):
+            raise TypeError("Quantity must be a whole number.")
+        # Validation: the OrderLine protects its own quantity instead of trusting every caller
+        if quantity <= 0:
+            raise ValueError("Quantity must be greater than zero.")
         self.__product: Product = product  # a reference to an existing Product
         self.__quantity: int = quantity
 
